@@ -102,6 +102,9 @@ def hook():
     payload = json.loads(request.form['payload'])
     import pprint; pprint.pprint(payload)
     repo = payload['repository']
+    if not payload['commits']:
+        return
+
     commit = payload['commits'][0]
 
     title = '%s - %s' % (repo['name'], commit['author']['name'])
@@ -110,7 +113,7 @@ def hook():
     if len(payload['commits']) == 1:
         body += ' (and %s more)' % len(payload['commits'])
         before, after = payload['before'][:8], payload['after'][:8]
-        action = '%s/compare/%s...%s' % (repo['url'], before, after)
+        action = payload['compare']
 
     repo_slug = normalize(repo['url'])
     q = User.query.join(User.subscriptions).filter(Subscription.repo == repo_slug)
