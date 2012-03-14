@@ -61,19 +61,32 @@ function getHooks() {
 }
 
 function addHook(repo) {
-  var data = {name: 'web',
+  var url = repo.url + '/hooks?access_token=' + token,
+      data = {name: 'web',
               active: true,
               config: {url: document.location + 'hook'}};
-  $.ajax({
-    url: repo.url + '/hooks?access_token=' + token,
-    type: 'POST',
-    data: JSON.stringify(data),
-    contentType: 'application/json',
-  }).done(function(d) {
-    // Store the hook id in localstorage.
-    saveHook(repo, JSON.parse(d));
-  }, function() {
+
+  var promise = $.Deferred().done(function(hook) {
+    saveHook(repo, hook);
+    render();
     $.post('/subscribe', {repo: repo.url, access_token: token});
+  });
+
+  $.getJSON(url, function(hooks) {
+    var hookMap = {};
+    $.each(hooks, function(i, h) { hookMap[h.config.url] = h; });
+
+    if (data.config.url in hookMap) {
+      promise.resolve(hookMap[data.config.url]);
+    } else {
+      $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(data),
+        dataType: 'json',
+        contentType: 'application/json',
+      }).done(function(d){ promise.resolve(d); });
+    }
   });
 }
 
@@ -158,9 +171,19 @@ function step3() {
 function step4() {
   $(document).trigger('step', [4]);
   var promise = getUserData();
-  promise.pipe(fetchRepos).then(function() {
-    $('#repos').html(Mustache.render($('#repos-template').text(), {repos: repos}));
-  });
+  promise.pipe(fetchRepos).then(render);
+}
+
+
+function render() {
+  var hooks = getHooks();
+  for (idx in repos) {
+    if (repos[idx].id in hooks) {
+      repos[idx].hasHook = true;
+    }
+  }
+  $('#repos').html(Mustache.render($('#repos-template').text(),
+                   {repos: repos}));
 }
 
 
