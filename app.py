@@ -119,7 +119,7 @@ def hook():
     q = User.query.join(User.subscriptions).filter(Subscription.repo == repo_slug)
     for user in q.all():
         if user.push_url:
-            notify(user.push_url, title, body)
+            notify(user.push_url, title, body, action)
     return ''
 
 
@@ -145,9 +145,10 @@ def subscribe():
     abort(400)
 
 
-def notify(queue, title, text):
-    print queue, title, text
-    print requests.post(queue, {'title': title, 'body': text})
+def notify(queue, title, text, action=None):
+    msg = {'title': title, 'body': text, 'actionUrl': action}
+    msg = dict((k, v) for k, v in msg.items() if v)
+    print requests.post(queue, msg)
 
 
 if __name__ == '__main__':
