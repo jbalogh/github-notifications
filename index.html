@@ -50,7 +50,7 @@
     <script type="template" id="repos-template">
       {{#repos}}
         <li>
-          <b><a href="{{ html_url }}">{{ name }}</a></b>
+          <b><a data-id="{{ id }}" href="{{ html_url }}">{{ name }}</a></b>
           <time>{{ pushed_at }}</time>
           <span>{{ watchers }}</span>
           <button class="add">Add Hook</button>

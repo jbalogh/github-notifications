@@ -1,4 +1,4 @@
-var token, repos = [], pushUrl;
+var token, repos = [], repoMap = {}, pushUrl;
 
 function bakeCookies() {
   var rv = {},
@@ -44,7 +44,20 @@ function fetchRepos(userData) {
         return -1;
       return 0;
     });
+
+    $.each(repos, function(i, el) { repoMap[el.id] = el; });
   });
+}
+
+function saveHook(repo, hook) {
+  var hooks = getHooks();
+  hooks[repo.id] = hook.url;
+  localStorage.setItem('hooks', JSON.stringify(hooks));
+  console.log(JSON.parse(localStorage.hooks));
+}
+
+function getHooks() {
+  return JSON.parse(localStorage.getItem('hooks') || '{}');
 }
 
 function addHook(repo) {
@@ -56,8 +69,9 @@ function addHook(repo) {
     type: 'POST',
     data: JSON.stringify(data),
     contentType: 'application/json',
-  }).done(function(e) {
+  }).done(function(d) {
     // Store the hook id in localstorage.
+    saveHook(repo, JSON.parse(d));
   }, function() {
     $.post('/subscribe', {repo: repo.url, access_token: token});
   });
@@ -67,11 +81,14 @@ function main() {
   step1().pipe(step2).pipe(step3).pipe(step4);
 
   $('#repos').on('click', 'button.add', function() {
-    var link = $(this).parent().find('a').attr('href'),
-        repoHash = {};
-    $.each(repos, function(i, el) { repoHash[el.html_url] = el; });
-
-    addHook(repoHash[link]);
+    var id = $(this).parent().attr('data-id');
+    addHook(repoMap[id]);
+  }).on('click', 'button.test', function() {
+    var id = $(this).parent().attr('data-id');
+    var hook = getHooks()[id];
+    if (hook) {
+      $.post(hook + '/test?access_token=' + token);
+    }
   });
 }
 
