@@ -49,12 +49,17 @@
 
     <script type="template" id="repos-template">
       {{#repos}}
-        <li>
-          <b><a data-id="{{ id }}" href="{{ html_url }}">{{ name }}</a></b>
+        <li data-id="{{ id }}">
+          <b><a href="{{ html_url }}">{{ name }}</a></b>
           <time>{{ pushed_at }}</time>
           <span>{{ watchers }}</span>
-          <button class="add">Add Hook</button>
-          <button class="test">Test Hook</button>
+          {{^hasHook}}
+            <button class="add">Add Hook</button>
+          {{/hasHook}}
+          {{#hasHook}}
+            <button disabled class="add">Add Hook</button>
+            <button class="test">Test Hook</button>
+          {{/hasHook}}
         </li>
       {{/repos}}
     </script>
