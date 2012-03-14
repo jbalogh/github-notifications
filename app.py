@@ -110,8 +110,8 @@ def hook():
     title = '%s - %s' % (repo['name'], commit['author']['name'])
     body = commit['message']
     action = commit['url']
-    if len(payload['commits']) == 1:
-        body += ' (and %s more)' % len(payload['commits'])
+    if len(payload['commits']) > 1:
+        body += ' (and %s more)' % (len(payload['commits']) - 1)
         before, after = payload['before'][:8], payload['after'][:8]
         action = payload['compare']
 
