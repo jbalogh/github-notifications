@@ -1,0 +1,11 @@
+Flask==0.8
+Jinja2==2.6
+Werkzeug==0.8.3
+certifi==0.0.8
+chardet==1.0.1
+requests==0.10.7
+wsgiref==0.1.2
+#psycopg2==2.4.4
+
+Flask-SQLAlchemy==0.15
+SQLAlchemy==0.7.5

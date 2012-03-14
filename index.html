@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Push Notifications for Github</title>
+    <script src="static/jquery.min.js"></script>
+    <script src="static/mustache.min.js"></script>
+    <script src="static/app.js"></script>
+
+    <style>
+    div {
+      margin: 1em;
+      padding: 1em;
+      border: 1px solid;
+    }
+    .showing {
+      background: #aaa;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Push Notifications for Github</h1>
+    <div id="intro">
+      <p>
+        This app lets you get push notfications in your browser when someone
+        pushes to your github repo. It uses web hooks.
+      </p>
+    </div>
+
+    <div id="step-1">
+      First you need to get the add-on to enable push notifications in
+      Firefox. Soon this will be built into the browser.
+      <a href="http://z.jbalogh.me/push.xpi">Get it here.</a>
+    </div>
+
+    <div id="step-2">
+      Now you need to authorize push notifications for this site.
+    </div>
+
+    <div id="step-3">
+      Now we'll connect to github with oauth.
+      <a href="https://github.com/login/oauth/authorize?client_id=8ff773cbf1a78dad7d7c&scope=repo">OAuth me!</a>
+    </div>
+
+    <div id="step-4">
+      Now let's hook up your repos to get notifications.
+      <ul id="repos"></ul>
+    </div>
+
+    <script type="template" id="repos-template">
+      {{#repos}}
+        <li>
+          <b><a href="{{ html_url }}">{{ name }}</a></b>
+          <time>{{ pushed_at }}</time>
+          <span>{{ watchers }}</span>
+          <button class="add">Add Hook</button>
+          <button class="test">Test Hook</button>
+        </li>
+      {{/repos}}
+    </script>
+  </body>
+</html>
