@@ -1,0 +1,8 @@
+div {
+  margin: 1em;
+  padding: 1em;
+  border: 1px solid;
+}
+.showing {
+  background: #ddd;
+}

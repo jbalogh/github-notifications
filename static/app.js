@@ -151,6 +151,9 @@ function step2() {
   check.onerror = function() {
     alert('error checking remote permission');
   }
+  promise.done(function() {
+   document.getElementById('step-2').innerHTML += '<p>Your push URL: <tt>' + pushUrl + '</tt>.</p>';
+  });
   return promise;
 }
 
