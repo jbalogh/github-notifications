@@ -6,7 +6,7 @@ import urlparse
 
 import requests
 
-from flask import Flask, request, redirect, abort
+from flask import Flask, request, redirect, abort, session
 from flaskext.sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -16,6 +16,8 @@ db = SQLAlchemy(app)
 
 OAUTH_CLIENT = os.environ.get('OAUTH_CLIENT', '')
 OAUTH_SECRET = os.environ.get('OAUTH_SECRET', '')
+
+app.secret_key = os.environ.get('SECRET_KEY', 'secret key')
 
 
 class Model(object):
@@ -29,10 +31,6 @@ class User(Model, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.now)
     username = db.Column(db.String(80), unique=True)
-    # The OAuth token.
-    access_token = db.Column(db.String(256), nullable=True)
-    # The blob of user data from the API.
-    api_data = db.Column(db.Text, nullable=True)
     # The push notification URL.
     push_url = db.Column(db.String(256), nullable=True)
 
@@ -56,13 +54,14 @@ def root():
 @app.route('/queue', methods=['POST'])
 def add_queue():
     queue = request.form['queue']
-    token = request.form['access_token']
-    user = User.query.filter_by(access_token=token).first_or_404()
-    user.push_url = queue
-    db.session.add(user)
-    db.session.commit()
-    notify(queue, 'Welcome to Github Notifications!',
-           'So glad to have you %s.' % user.username)
+    username = session['username']
+    user = User.query.filter_by(username=username).first_or_404()
+    if user.push_url != queue:
+        user.push_url = queue
+        db.session.add(user)
+        db.session.commit()
+        notify(queue, 'Welcome to Github Notifications!',
+               'So glad to have you %s.' % user.username)
     return ''
 
 
@@ -77,21 +76,16 @@ def oauth():
         token = dict(urlparse.parse_qsl(r.text))['access_token']
 
         r = requests.get('https://api.github.com/user?access_token=%s' % token)
-        data = json.loads(r.text)
-        user = User.query.filter_by(username=data['login']).first()
-        if user:
-            user.access_token = token
-            user.api_data = r.text
-        else:
-            user = User(username=data['login'],
-                        access_token=token,
-                        api_data=r.text)
-        db.session.add(user)
-        db.session.commit()
+        username = json.loads(r.text)['login']
+        if not User.query.filter_by(username=username).first():
+            user = User(username=username)
+            db.session.add(user)
+            db.session.commit()
 
+        session['username'] = username
         response = redirect('/')
         response.set_cookie('access_token', token)
-        response.set_cookie('username', user.username)
+        response.set_cookie('username', username);
         return response
 
     return redirect('/')
@@ -130,18 +124,17 @@ def normalize(repo_url):
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
     repo = request.form['repo']
-    token = request.form['access_token']
+    username = session['username']
 
-    user = User.query.filter_by(access_token=token).first_or_404()
-    if token == user.access_token:
-        r = requests.get(repo + '/collaborators/%s' % user.username)
-        if r.status_code == 204:
-            repo = normalize(repo)
-            if not Subscription.query.filter_by(user=user, repo=repo).first():
-                sub = Subscription(repo=repo, user=user)
-                db.session.add(sub)
-                db.session.commit()
-                return ''
+    user = User.query.filter_by(username=username).first_or_404()
+    r = requests.get(repo + '/collaborators/%s' % user.username)
+    if r.status_code == 204:
+        repo = normalize(repo)
+        if not Subscription.query.filter_by(user=user, repo=repo).first():
+            sub = Subscription(repo=repo, user=user)
+            db.session.add(sub)
+            db.session.commit()
+            return ''
     abort(400)
 
 

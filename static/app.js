@@ -1,4 +1,4 @@
-var token, repos = [], repoMap = {}, pushUrl;
+var token, username, repos = [], repoMap = {}, pushUrl;
 
 function bakeCookies() {
   var rv = {},
@@ -163,8 +163,20 @@ function step3() {
   var promise = $.Deferred(),
       cookies = bakeCookies();
   if (cookies.username && cookies.access_token) {
-    token = cookies.access_token;
+    token = localStorage.token = cookies.access_token;
+    username = localStorage.username = cookies.username;
     $.post('/queue', {queue: pushUrl, access_token: token});
+
+    // Clear the token and username.
+    var date = new Date();
+    date.setTime(date.getTime() - (24 * 60 * 60 * 1000));
+    var expires = '; expires=' + date.toGMTString() + ';';
+    document.cookie = 'username=;' + expires;
+    document.cookie = 'access_token=;' + expires;
+    promise.resolve();
+  } else if (localStorage.username && localStorage.token) {
+    token = localStorage.token;
+    username = localStorage.username;
     promise.resolve();
   }
   return promise;
