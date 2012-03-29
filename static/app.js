@@ -53,7 +53,6 @@ function saveHook(repo, hook) {
   var hooks = getHooks();
   hooks[repo.id] = hook.url;
   localStorage.setItem('hooks', JSON.stringify(hooks));
-  console.log(JSON.parse(localStorage.hooks));
 }
 
 function getHooks() {
@@ -69,7 +68,7 @@ function addHook(repo) {
   var promise = $.Deferred().done(function(hook) {
     saveHook(repo, hook);
     render();
-    $.post('/subscribe', {repo: repo.url, access_token: token});
+    $.post('/subscribe', {repo: repo.url});
   });
 
   $.getJSON(url, function(hooks) {
@@ -90,6 +89,18 @@ function addHook(repo) {
   });
 }
 
+function removeHook(repo) {
+  var hooks = getHooks(),
+      hook = hooks[repo.id];
+  console.log('deleting', repo.id, repo.name, hook);
+  delete hooks[repo.id];
+  localStorage.setItem('hooks', JSON.stringify(hooks));
+  $.ajax({url: hook + '?access_token=' + token, type: 'DELETE'});
+  $.post('/unsubscribe', {repo: repo.url});
+  render();
+  console.log('deleted');
+}
+
 function main() {
   step1().pipe(step2).pipe(step3).pipe(step4);
 
@@ -102,6 +113,9 @@ function main() {
     if (hook) {
       $.post(hook + '/test?access_token=' + token);
     }
+  }).on('click', 'button.disconnect', function() {
+    var id = $(this).parent().attr('data-id');
+    removeHook(repoMap[id]);
   });
 }
 
@@ -129,6 +143,7 @@ function step1() {
 
 function step2() {
   $(document).trigger('step', [2]);
+  $('#step-2 li:first-child').addClass('selected');
   var promise = $.Deferred();
 
   var notification = navigator.mozNotification,
@@ -152,14 +167,14 @@ function step2() {
     alert('error checking remote permission');
   }
   promise.done(function() {
-   document.getElementById('step-2').innerHTML += '<p>Your push URL: <tt>' + pushUrl + '</tt>.</p>';
+   console.log('Your push URL:', pushUrl);
+   $('#step-2 li').toggleClass('selected');
   });
   return promise;
 }
 
 
 function step3() {
-  $(document).trigger('step', [3]);
   var promise = $.Deferred(),
       cookies = bakeCookies();
   if (cookies.username && cookies.access_token) {
@@ -184,7 +199,7 @@ function step3() {
 
 
 function step4() {
-  $(document).trigger('step', [4]);
+  $(document).trigger('step', [3]);
   var promise = getUserData();
   promise.pipe(fetchRepos).then(render);
 }
@@ -193,19 +208,24 @@ function step4() {
 function render() {
   var hooks = getHooks();
   for (idx in repos) {
-    if (repos[idx].id in hooks) {
-      repos[idx].hasHook = true;
-    }
+    repos[idx].hasHook = (repos[idx].id in hooks);
   }
   $('#repos').html(Mustache.render($('#repos-template').text(),
-                   {repos: repos}));
+                   {hasRepos: !!repos, repos: repos}));
 }
 
 
 $(document).bind('step', function(e, step) {
-  console.log('step', step);
-  $('.showing').removeClass('showing');
-  $('#step-' + step).addClass('showing');
+  var child = ':nth-child(' + step + ')';
+  // jQuery's addClass/removeClass isn't playing nice with svg.
+  $('.selected').each(function(idx, el) {
+    if (el.classList)
+      el.classList.remove('selected');
+  })
+  $('#omgsvg,#nav,#steps').children(child).each(function(idx, el) {
+    if (el.classList)
+      el.classList.add('selected');
+  });
 });
 
 $(document).ready(main);

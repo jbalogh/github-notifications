@@ -9,49 +9,135 @@
     <script src="static/app.js"></script>
   </head>
   <body>
-    <h1>Push Notifications for Github</h1>
+    <h1>Push Notifications for Github <small>in Firefox</small></h1>
     <div id="intro">
+      <div id="hero"></div>
       <p>
-        This app lets you get push notfications in your browser when someone
-        pushes to your github repo. It uses web hooks.
+        This app uses Github's web hook system to send push notifications when
+        someone commits to your repository. It's a demo of
+        <a href="http://jbalogh.me/2012/01/30/push-notifications/">push notifications in Firefox</a>.
       </p>
     </div>
 
-    <div id="step-1">
-      First you need to get the add-on to enable push notifications in
-      Firefox. Soon this will be built into the browser.
-      <a href="http://z.jbalogh.me/push.xpi">Get it here.</a>
+
+    <div id="omg">
+      <svg id="omgsvg">
+        <polygon class="selected" points="0,0 110,0 125,15 110,30 0,30" />
+        <polygon points="115,0 235,0 250,15 235,30 115,30, 130,15" />
+        <polygon points="240,0 360,0 375,15 360,30 240,30 255,15" />
+      </svg>
+      <ol id="nav">
+        <li class="selected">Install</li>
+        <li>Authorize</li>
+        <li>Connect</li>
+      </ol>
     </div>
 
-    <div id="step-2">
-      Now you need to authorize push notifications for this site.
-    </div>
+    <ol id="steps">
+      <li id="step-1" class="selected">
+        <script type="text/template" id="step-1-template">
+          <h2>Install the add-on</h2>
+          <a class="button" href="https://people.mozilla.com/~jbalogh/push-notifications.xpi">Install</a>
+          <p>
+            Firefox will ask if you'll allow <code>{{ site }}</code> to
+            install software on your computer. Press <b>Allow</b>.
+          </p>
+          <p>
+            Then press <b>Install Now</b> in the add-on install dialog box.
+          </p>
+        </script>
+      </li>
+      <li id="step-2">
+        <ol>
+          <li class="selected">
+            <h2>Turn on Push Notifications</h2>
+            <img height="30" width="30" src="static/spinner.gif">
+            <p>The install dialog is hanging off the URL bar.</p>
+          </li>
+          <li>
+            <h2>Authorize this app with Github</h2>
+            <a class="button" href="https://github.com/login/oauth/authorize?client_id=8ff773cbf1a78dad7d7c&scope=repo">Authorize</a>
+            <p>
+              No personal data is stored on the server (except your username).
+              Everything else is kept in the browser's <code>localStorage</code>.
+            </p>
+            <p>
+              The app asks for write access so it can change your web hooks.
+            </p>
+          </li>
+        </ol>
 
-    <div id="step-3">
-      Now we'll connect to github with oauth.
-      <a href="https://github.com/login/oauth/authorize?client_id=8ff773cbf1a78dad7d7c&scope=repo">OAuth me!</a>
-    </div>
+      </li>
+      <li id="step-3">
+        <h2>Get Notifications for your Repos</h2>
+        <div id="repos"></div>
+        <p>
+          Thanks for testing notifications.<br> If you have 30 seconds, please
+          fill out <a href="http://bit.ly/HkSH9i">this survey</a>.
+        </p>
+      </li>
+    </ol>
+    <script>
+      var view = {site: document.location.host};
+      $('#step-1').html(Mustache.render($('#step-1-template').text(), view));
+    </script>
 
-    <div id="step-4">
-      Now let's hook up your repos to get notifications.
-      <ul id="repos"></ul>
-    </div>
+    <footer>
+      <ul>
+        <li><a class="secret" href="http://jbalogh.me">Jeff Balogh</a></li>
+        <li>jeff@jbalogh.me</li>
+      </ul>
+      <ul>
+        <li><a href="https://github.com/jbalogh">github.com/jbalogh</a></li>
+        <li><a href="https://twitter.com/jeffbalogh">@jeffbalogh</a></li>
+      </ul>
+    </footer>
 
-    <script type="template" id="repos-template">
-      {{#repos}}
-        <li data-id="{{ id }}">
-          <b><a href="{{ html_url }}">{{ name }}</a></b>
-          <time>{{ pushed_at }}</time>
-          <span>{{ watchers }}</span>
-          {{^hasHook}}
-            <button class="add">Add Hook</button>
-          {{/hasHook}}
-          {{#hasHook}}
-            <button disabled class="add">Add Hook</button>
-            <button class="test">Test Hook</button>
-          {{/hasHook}}
-        </li>
-      {{/repos}}
+    <a href="http://github.com/jbalogh/github-notifications"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://a248.e.akamai.net/assets.github.com/img/7afbc8b248c68eb468279e8c17986ad46549fb71/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub"></a>
+
+    <script type="text/template" id="repos-template">
+      {{#hasRepos}}
+      <table>
+        <thead>
+         <tr>
+           <td>Name</td>
+           <td colspan="2">Hooks</td>
+         </tr>
+        </thead>
+        <tbody>
+        {{#repos}}
+          <tr>
+           <td><a class="secret" href="{{ html_url }}">{{ name }}</a></td>
+           <td data-id="{{ id }}">
+            {{^hasHook}}
+              <button title="Add a web hook to get notifications" class="add">Connect</button>
+            {{/hasHook}}
+            {{#hasHook}}
+              <button title="Remove the web hook and stop getting notifications" class="disconnect">Disconnect</button>
+              <button title="Test the web hook" class="test">Test</button>
+            {{/hasHook}}
+           </td>
+          </tr>
+        {{/repos}}
+        </tbody>
+      </table>
+      {{/hasRepos}}
+      {{^hasRepos}}
+        <b>Sorry, you don't have any repositories on Github to try the demo.</b>
+      {{/hasRepos}}
+      </tbody>
+    </script>
+    <script type="text/javascript">
+      var _gauges = _gauges || [];
+      (function() {
+        var t   = document.createElement('script');
+        t.async = true;
+        t.id    = 'gauges-tracker';
+        t.setAttribute('data-site-id', '4f754bba613f5d1452000082');
+        t.src = '//secure.gaug.es/track.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(t, s);
+      })();
     </script>
   </body>
 </html>

@@ -1,8 +1,184 @@
-div {
-  margin: 1em;
-  padding: 1em;
-  border: 1px solid;
+/** General styles. **/
+* {
+  margin: 0 auto;
+  padding: 0;
 }
-.showing {
-  background: #ddd;
+@font-face {
+  font-family: "Open Sans Light";
+  src: url(OpenSans-Light-webfont.woff);
+  font-weight: normal;
+  font-style: normal;
+}
+body {
+  font-family: "Open Sans Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  text-align: center;
+  color: rgb(72,72,72);
+  width: 800px;
+  background: url(bg-sky.png) 0 0 repeat-x,
+              #eee -moz-linear-gradient(to bottom, #eee, #fff 100px) 0 436px;
+  background: url(bg-sky.png) 0 0 repeat-x,
+              #eee -webkit-linear-gradient(top, #eee, #fff 100px) 0 436px;
+  background: url(bg-sky.png) 0 0 repeat-x,
+              #eee -ms-linear-gradient(top, #eee, #fff 100px) 0 436px;
+  background: url(bg-sky.png) 0 0 repeat-x,
+              #eee -o-linear-gradient(top, #eee, #fff 100px) 0 436px;
+  background: url(bg-sky.png) 0 0 repeat-x,
+              #eee linear-gradient(to bottom, #eee, #fff 100px) 0 436px;
+}
+h1 {
+  font-size: 40px;
+  margin: 12px 0 20px;
+  letter-spacing: -1px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.75);
+}
+h2 {
+  margin-bottom: .75em;
+  letter-spacing: -1px;
+}
+ol, ul {
+  list-style-type: none;
+}
+h1 small {
+  display: block;
+}
+p {
+  margin: 1.5em 0 2em;
+}
+a {
+  color: inherit;
+}
+a.secret {
+  text-decoration: none;
+}
+
+/** Intro block. **/
+#hero {
+  width: 600px;
+  height: 300px;
+  background: url(hero.png) no-repeat 99% top;
+  border-radius: 4px;
+  box-shadow: 0 0 4px 4px #aaa;
+}
+#intro {
+  width: 600px;
+}
+
+/** Arrow navigation. **/
+#nav {
+  margin-bottom: 1em;
+}
+#nav li {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+  margin: 0;
+  padding: 14px 8px 8px;
+  color: #424242;
+  font-weight: bold;
+}
+#nav li.selected {
+  color: #fff;
+}
+
+#omg {
+  position: relative;
+}
+#omgsvg {
+  width: 400px;
+  height: 40px;
+  background: transparent;
+  position: absolute;
+  top: 8px;
+  left: 220px;
+}
+#omgsvg polygon {
+  fill: #e4e4e4;
+}
+#omgsvg polygon.selected {
+  fill: #424242;
+}
+
+/** Instructions. **/
+#steps p {
+  width: 500px;
+  font-size: 14px;
+  margin: 1em auto;
+}
+
+#steps p:first-of-type {
+  margin-top: 2em;
+}
+
+#steps li:not(.selected) {
+  display: none;
+}
+
+/** Buttons (via bootstrap.css). **/
+button,
+.button {
+  display: inline-block;
+  padding: 4px 10px 4px;
+  color: #333;
+  text-decoration: none;
+  line-height: 18px;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+  background-color: #e6e6e6;
+  background-image: -webkit-linear-gradient(top, #fff, #e6e6e6);
+  background-image: -moz-linear-gradient(to bottom, #fff, #e6e6e6);
+  background-image: -ms-linear-gradient(top, #fff, #e6e6e6);
+  background-image: -o-linear-gradient(top, #fff, #e6e6e6);
+  background-image: -webkit-linear-gradient(to bottom, #fff, #e6e6e6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #cccccc;
+  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+button:hover,
+.button:hover {
+  background: #e6e6e6;
+}
+button:focus, button:active,
+.button:focus, .button:active {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/** Tables (via bootstrap.css). **/
+table {
+  text-align: left;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+th, td {
+  padding: 8px;
+  line-height: 16px;
+  border: 1px solid #ddd;
+  min-width: 150px;
+}
+tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+thead {
+  background-color: transparent;
+  font-weight: bold;
+}
+
+/** Vanity. **/
+footer {
+  border-top: 4px solid #e3e3e3;
+  margin-top: 3em;
+  font-size: 13px;
+}
+footer ul {
+  float: left;
+  margin: 1em 0 0 100px;
+  text-align: left;
+}
+footer ul:last-child {
+  float: right;
+  text-align: right;
+  margin: 1em 100px 0 0;
+}
+footer li {
+  margin-bottom: .5em;
 }

@@ -100,7 +100,6 @@ def oauth():
 @app.route('/hook', methods=['POST'])
 def hook():
     payload = json.loads(request.form['payload'])
-    import pprint; pprint.pprint(payload)
     repo = payload['repository']
     if not payload['commits']:
         return ''
