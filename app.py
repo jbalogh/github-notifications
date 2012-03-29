@@ -97,7 +97,7 @@ def hook():
     import pprint; pprint.pprint(payload)
     repo = payload['repository']
     if not payload['commits']:
-        return
+        return ''
 
     commit = payload['commits'][0]
 
@@ -136,6 +136,18 @@ def subscribe():
             db.session.commit()
             return ''
     abort(400)
+
+
+@app.route('/unsubscribe', methods=['POST'])
+def unsubscribe():
+    repo = normalize(request.form['repo'])
+    username = session['username']
+
+    user = User.query.filter_by(username=username).first_or_404()
+    obj = Subscription.query.filter_by(user=user, repo=repo).first_or_404()
+    db.session.delete(obj)
+    db.session.commit()
+    return ''
 
 
 def notify(queue, title, text, action=None):
