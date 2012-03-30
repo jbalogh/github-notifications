@@ -57,9 +57,7 @@ function getOrgData() {
 
 function getOrgRepos(orgs) {
   return $.when.apply($, orgs.map(function(org) {
-    return $.getJSON(org.url + '/repos?type=member&access_token=' + token).done(
-    function(e){ console.log(org.url, e.length);}
-    );
+    return $.getJSON(org.url + '/repos?type=member&access_token=' + token);
   }));
 }
 
@@ -67,7 +65,6 @@ function addOrgRepos() {
   getOrgData().pipe(getOrgRepos).done(function() {
     var rs = [].map.call(arguments, function(e){ return e[0]; });
     orgRepos = [].concat.apply([], rs);
-    console.log('org', orgRepos.length);
     sortRepos(orgRepos);
     render();
   });
@@ -119,13 +116,14 @@ function addHook(repo) {
 function removeHook(repo) {
   var hooks = getHooks(),
       hook = hooks[repo.id];
-  console.log('deleting', repo.id, repo.name, hook);
-  delete hooks[repo.id];
-  localStorage.setItem('hooks', JSON.stringify(hooks));
-  $.ajax({url: hook + '?access_token=' + token, type: 'DELETE'});
-  $.post('/unsubscribe', {repo: repo.url});
+  $.post('/unsubscribe', {repo: repo.url}, function(d) {
+    delete hooks[repo.id];
+    localStorage.setItem('hooks', JSON.stringify(hooks));
+    if (d.count === 0) {
+      $.ajax({url: hook + '?access_token=' + token, type: 'DELETE'});
+    }
+  });
   render();
-  console.log('deleted');
 }
 
 function main() {

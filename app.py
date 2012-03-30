@@ -6,7 +6,7 @@ import urlparse
 
 import requests
 
-from flask import Flask, request, redirect, abort, session
+from flask import Flask, request, redirect, abort, session, jsonify
 from flaskext.sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -154,7 +154,7 @@ def unsubscribe():
     obj = Subscription.query.filter_by(user=user, repo=repo).first_or_404()
     db.session.delete(obj)
     db.session.commit()
-    return ''
+    return jsonify(count=Subscription.query.filter_by(repo=repo).count())
 
 
 def notify(queue, title, text, action=None):
