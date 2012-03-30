@@ -107,7 +107,7 @@
         <tbody>
         {{#repos}}
           <tr>
-           <td><a class="secret" href="{{ html_url }}">{{ name }}</a></td>
+           <td><a class="secret" href="{{ html_url }}">{{ owner.login }}/{{ name }}</a></td>
            <td data-id="{{ id }}">
             {{^hasHook}}
               <button title="Add a web hook to get notifications" class="add">Connect</button>
