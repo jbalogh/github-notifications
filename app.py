@@ -61,6 +61,7 @@ def add_queue():
     username = session['username']
     user = User.query.filter_by(username=username).first_or_404()
     if user.push_url != queue:
+        print 'Adding a new queue.'
         user.push_url = queue
         db.session.add(user)
         db.session.commit()
@@ -82,6 +83,7 @@ def oauth():
         r = requests.get('https://api.github.com/user?access_token=%s' % token)
         username = json.loads(r.text)['login']
         if not User.query.filter_by(username=username).first():
+            print 'New user:', username
             user = User(username=username)
             db.session.add(user)
             db.session.commit()
@@ -114,6 +116,7 @@ def hook():
         action = payload['compare']
 
     repo_slug = normalize(repo['url'])
+    print 'Sending hook for:', repo_slug
     q = User.query.join(User.subscriptions).filter(Subscription.repo == repo_slug)
     for user in q.all():
         if user.push_url:
@@ -135,6 +138,7 @@ def subscribe():
     if r.status_code == 204:
         repo = normalize(repo)
         if not Subscription.query.filter_by(user=user, repo=repo).first():
+            print 'Adding a subscription for:', repo
             sub = Subscription(repo=repo, user=user)
             db.session.add(sub)
             db.session.commit()
@@ -157,9 +161,10 @@ def unsubscribe():
 def notify(queue, title, text, action=None):
     msg = {'title': title, 'body': text, 'actionUrl': action}
     msg = dict((k, v) for k, v in msg.items() if v)
-    print requests.post(queue, msg)
+    response = requests.post(queue, msg)
+    print 'Sent notification:', response
 
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5003))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=os.environ.get('DEBUG', False))
