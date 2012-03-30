@@ -48,7 +48,7 @@ class Subscription(Model, db.Model):
 
 @app.route('/', methods=['GET'])
 def root():
-    if request.headers['X-Forwarded-Proto'] != 'https':
+    if not app.debug and request.headers['X-Forwarded-Proto'] != 'https':
         response = redirect('https://github-notifications.herokuapp.com', 301)
         response.headers['Strict-Transport-Security'] = 'max-age=15768000'
         return response
@@ -166,4 +166,4 @@ def notify(queue, title, text, action=None):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5003))
-    app.run(host='0.0.0.0', port=port, debug=os.environ.get('DEBUG', False))
+    app.run(host='0.0.0.0', port=port, debug=True)
