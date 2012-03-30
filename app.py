@@ -34,6 +34,9 @@ class User(Model, db.Model):
     # The push notification URL.
     push_url = db.Column(db.String(256), nullable=True)
 
+    def __repr__(self):
+        return self.username
+
 
 class Subscription(Model, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +47,9 @@ class Subscription(Model, db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User',
                            backref=db.backref('subscriptions', lazy='dynamic'))
+
+    def __repr__(self):
+        return self.repo
 
 
 @app.route('/', methods=['GET'])
