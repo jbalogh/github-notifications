@@ -98,37 +98,51 @@
     <a href="http://github.com/jbalogh/github-notifications"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://a248.e.akamai.net/assets.github.com/img/7afbc8b248c68eb468279e8c17986ad46549fb71/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub"></a>
 
     <script type="text/template" id="repos-template">
-      {{#hasRepos}}
-      <table>
-        <thead>
-         <tr>
-           <td>Name</td>
-           <td colspan="2">Hooks</td>
-         </tr>
-        </thead>
-        <tbody>
-        {{#repos}}
-          <tr>
-           <td><a class="secret" href="{{ html_url }}">{{ owner.login }}/{{ name }}</a></td>
-           <td data-id="{{ id }}">
-            {{^hasHook}}
-              <button title="Add a web hook to get notifications" class="add">Connect</button>
-            {{/hasHook}}
-            {{#hasHook}}
-              <button title="Remove the web hook and stop getting notifications" class="disconnect">Disconnect</button>
-              <button title="Test the web hook" class="test">Test</button>
-            {{/hasHook}}
-           </td>
-          </tr>
-        {{/repos}}
-        </tbody>
-      </table>
-      {{/hasRepos}}
-      {{^hasRepos}}
-        <b>Sorry, you don't have any repositories on Github to try the demo.</b>
-      {{/hasRepos}}
-      </tbody>
+      <ul>
+        {{#data}}
+        <li class="button repo-type">{{ name }}</li>
+        {{/data}}
+      </ul>
+      {{#data}}
+      <div class="repo-table">
+        {{#exists}}
+        <table>
+          <thead>
+           <tr>
+             <td>Name</td>
+             <td colspan="2">Hooks</td>
+           </tr>
+          </thead>
+          <tbody>
+          {{#repos}}
+            <tr>
+             <td><a class="secret" href="{{ html_url }}">{{ owner.login }}/{{ name }}</a></td>
+             <td data-id="{{ id }}">
+               {{^denied}}
+                 {{^hasHook}}
+                   <button title="Add a web hook to get notifications" class="add">Connect</button>
+                 {{/hasHook}}
+                 {{#hasHook}}
+                   <button title="Remove the web hook and stop getting notifications" class="disconnect">Disconnect</button>
+                   <button title="Test the web hook" class="test">Test</button>
+                 {{/hasHook}}
+               {{/denied}}
+               {{#denied}}
+                 <span title="Github told me you're a member of this repo, but they lied. Sorry." class="denied">Permission Denied</span>
+               {{/denied}}
+             </td>
+            </tr>
+          {{/repos}}
+          </tbody>
+        </table>
+        {{/exists}}
+        {{^exists}}
+          <b>Sorry, you don't have any repositories on Github to try the demo.</b>
+        {{/exists}}
+      </div>
+      {{/data}}
     </script>
+
     <script type="text/javascript">
       var _gauges = _gauges || [];
       (function() {

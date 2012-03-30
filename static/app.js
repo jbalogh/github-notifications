@@ -1,4 +1,4 @@
-var token, username, repos = [], repoMap = {}, pushUrl;
+var token, username, repos = [], orgRepos = [], repoMap = {}, pushUrl;
 
 function bakeCookies() {
   var rv = {},
@@ -35,17 +35,41 @@ function fetchRepos(userData) {
     promises.push($.getJSON(url, function(rs) { repos = repos.concat(rs); }));
   }
 
-  return $.when.apply($, promises).done(function() {
-    repos.sort(function(a, b) {
-      var atime = new Date(a.pushed_at), btime = new Date(b.pushed_at);
-      if (atime < btime)
-        return 1;
-      if (btime < atime)
-        return -1;
-      return 0;
-    });
+  return $.when.apply($, promises).done(function() { sortRepos(repos); });
+}
 
-    $.each(repos, function(i, el) { repoMap[el.id] = el; });
+function sortRepos(arr) {
+  arr.sort(function(a, b) {
+    var atime = new Date(a.pushed_at), btime = new Date(b.pushed_at);
+    if (atime < btime)
+      return 1;
+    if (btime < atime)
+      return -1;
+    return 0;
+  });
+
+  $.each(arr, function(i, el) { repoMap[el.id] = el; });
+}
+
+function getOrgData() {
+  return $.getJSON('https://api.github.com/user/orgs?access_token=' + token);
+}
+
+function getOrgRepos(orgs) {
+  return $.when.apply($, orgs.map(function(org) {
+    return $.getJSON(org.url + '/repos?type=member&access_token=' + token).done(
+    function(e){ console.log(org.url, e.length);}
+    );
+  }));
+}
+
+function addOrgRepos() {
+  getOrgData().pipe(getOrgRepos).done(function() {
+    var rs = [].map.call(arguments, function(e){ return e[0]; });
+    orgRepos = [].concat.apply([], rs);
+    console.log('org', orgRepos.length);
+    sortRepos(orgRepos);
+    render();
   });
 }
 
@@ -86,6 +110,9 @@ function addHook(repo) {
         contentType: 'application/json',
       }).done(function(d){ promise.resolve(d); });
     }
+  }).fail(function() {
+    repoMap[repo.id].denied = true;
+    render();
   });
 }
 
@@ -104,7 +131,8 @@ function removeHook(repo) {
 function main() {
   step1().pipe(step2).pipe(step3).pipe(step4);
 
-  $('#repos').on('click', 'button.add', function() {
+  var $repos = $('#repos');
+  $repos.on('click', 'button.add', function() {
     var id = $(this).parent().attr('data-id');
     addHook(repoMap[id]);
   }).on('click', 'button.test', function() {
@@ -116,6 +144,8 @@ function main() {
   }).on('click', 'button.disconnect', function() {
     var id = $(this).parent().attr('data-id');
     removeHook(repoMap[id]);
+  }).on('click', '.repo-type', function() {
+    $repos.toggleClass('org');
   });
 }
 
@@ -201,17 +231,23 @@ function step3() {
 function step4() {
   $(document).trigger('step', [3]);
   var promise = getUserData();
-  promise.pipe(fetchRepos).then(render);
+  promise.pipe(fetchRepos).then(render).then(addOrgRepos);
 }
 
 
 function render() {
-  var hooks = getHooks();
-  for (idx in repos) {
-    repos[idx].hasHook = (repos[idx].id in hooks);
+  var hooks = getHooks(),
+      allRepos = repos.concat(orgRepos);
+  for (idx in allRepos) {
+    allRepos[idx].hasHook = (allRepos[idx].id in hooks);
   }
   $('#repos').html(Mustache.render($('#repos-template').text(),
-                   {hasRepos: !!repos, repos: repos}));
+                   {data: [{name: 'User Repos',
+                            exists: !!repos,
+                            repos: repos},
+                           {name: 'Org Repos',
+                            exists: !!orgRepos,
+                            repos: orgRepos}]}));
 }
 
 
