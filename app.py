@@ -68,11 +68,13 @@ def add_queue():
     queue = request.form['queue']
     username = session['username']
     user = User.query.filter_by(username=username).first_or_404()
+    new_user = user.push_url is None
     if user.push_url != queue:
-        print 'Adding a new queue.'
+        print ('Adding push URL.' if new_user else 'Updating push URL.')
         user.push_url = queue
         db.session.add(user)
         db.session.commit()
+    if new_user:
         notify(queue, 'Welcome to Github Notifications!',
                'So glad to have you %s.' % user.username)
     return ''

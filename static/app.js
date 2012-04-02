@@ -214,7 +214,6 @@ function step3() {
   if (cookies.username && cookies.access_token) {
     token = localStorage.token = cookies.access_token;
     username = localStorage.username = cookies.username;
-    $.post('/queue', {queue: pushUrl});
 
     // Clear the token and username.
     var date = new Date();
@@ -228,6 +227,9 @@ function step3() {
     username = localStorage.username;
     promise.resolve();
   }
+  promise.done(function() {
+    $.post('/queue', {queue: pushUrl});
+  });
   return promise;
 }
 
