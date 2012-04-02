@@ -7,6 +7,6 @@ requests==0.10.7
 wsgiref==0.1.2
 psycopg2==2.4.4
 gunicorn==0.14.2
-
 Flask-SQLAlchemy==0.15
 SQLAlchemy==0.7.5
+boto==2.3.0
