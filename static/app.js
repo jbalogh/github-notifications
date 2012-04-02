@@ -127,6 +127,12 @@ function removeHook(repo) {
 }
 
 function main() {
+  if (localStorage.getItem('version') !== '2') {
+    localStorage.removeItem('username');
+    localStorage.removeItem('access_token');
+    localStorage.setItem('version', '2');
+  }
+
   step1().pipe(step2).pipe(step3).pipe(step4);
 
   var $repos = $('#repos');
