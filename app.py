@@ -17,6 +17,8 @@ db = SQLAlchemy(app)
 OAUTH_CLIENT = os.environ.get('OAUTH_CLIENT', '')
 OAUTH_SECRET = os.environ.get('OAUTH_SECRET', '')
 
+STATIC_URL = os.environ.get('STATIC_URL', 'static')
+
 app.secret_key = os.environ.get('SECRET_KEY', 'secret key')
 
 
@@ -58,7 +60,7 @@ def root():
         response = redirect('https://github-notifications.herokuapp.com', 301)
         response.headers['Strict-Transport-Security'] = 'max-age=15768000'
         return response
-    return open('index.html').read()
+    return open('index.html').read() % {'STATIC': STATIC_URL}
 
 
 @app.route('/queue', methods=['POST'])

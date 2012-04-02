@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <title>Push Notifications for Github</title>
-    <link rel="stylesheet" href="static/app.css">
-    <script src="static/jquery.min.js"></script>
-    <script src="static/mustache.min.js"></script>
-    <script src="static/app.js"></script>
+    <link rel="stylesheet" href="%(STATIC)s/app.css">
+    <script src="%(STATIC)s/jquery.min.js"></script>
+    <script src="%(STATIC)s/mustache.min.js"></script>
+    <script src="%(STATIC)s/app.js"></script>
   </head>
   <body>
     <h1>Push Notifications for Github <small>in Firefox</small></h1>
@@ -51,7 +51,7 @@
         <ol>
           <li class="selected">
             <h2>Turn on Push Notifications</h2>
-            <img height="30" width="30" src="static/spinner.gif">
+            <img height="30" width="30" src="%(STATIC)s/spinner.gif">
             <p>The install dialog is hanging off the URL bar.</p>
           </li>
           <li>
@@ -71,7 +71,7 @@
       <li id="step-3">
         <h2>Get Notifications for your Repos</h2>
         <div id="repos">
-          <img height="30" width="30" src="static/spinner.gif">
+          <img height="30" width="30" src="%(STATIC)s/spinner.gif">
         </div>
         <p>
           Thanks for testing notifications.<br> If you have 30 seconds, please
