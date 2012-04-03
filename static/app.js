@@ -10,8 +10,16 @@ function bakeCookies() {
   return rv;
 }
 
+var statTimeout = null, stats = {};
+
 function stat(name) {
-  $.post('/stat', {name: name});
+  stats[name] = 1;
+  if (statTimeout === null) {
+    statTimeout = setTimeout(function() {
+      $.post('/stats', stats);
+      statTimeout = null, stats = {};
+    }, 5000);
+  }
 }
 
 function getUserData() {

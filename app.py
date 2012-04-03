@@ -251,10 +251,11 @@ def unsubscribe():
     return jsonify(count=Subscription.query.filter_by(repo=repo).count())
 
 
-@app.route('/stat', methods=['POST'])
+@app.route('/stats', methods=['POST'])
 def add_stat():
     stat('add-stat')
-    stat(request.form['name'])
+    for key in request.form:
+        stat(key)
     return ''
 
 
