@@ -10,6 +10,10 @@ function bakeCookies() {
   return rv;
 }
 
+function stat(name) {
+  $.post('/stat', {name: name});
+}
+
 function getUserData() {
   var promise = $.Deferred();
   if (localStorage.getItem('userData')) {
@@ -81,6 +85,7 @@ function getHooks() {
 }
 
 function addHook(repo) {
+  stat('add-hook');
   var url = repo.url + '/hooks?access_token=' + token,
       data = {name: 'web',
               active: true,
@@ -104,16 +109,18 @@ function addHook(repo) {
         type: 'POST',
         data: JSON.stringify(data),
         dataType: 'json',
-        contentType: 'application/json',
+        contentType: 'application/json'
       }).done(function(d){ promise.resolve(d); });
     }
   }).fail(function() {
+    stat('hook-fail');
     repoMap[repo.id].denied = true;
     render();
   });
 }
 
 function removeHook(repo) {
+  stat('remove-hook');
   var hooks = getHooks(),
       hook = hooks[repo.id];
   $.post('/unsubscribe', {repo: repo.url}, function(d) {
@@ -143,6 +150,7 @@ function main() {
     var id = $(this).parent().attr('data-id');
     var hook = getHooks()[id];
     if (hook) {
+      stat('test-hook');
       $.post(hook + '/test?access_token=' + token);
     }
   }).on('click', 'button.disconnect', function() {
@@ -185,24 +193,29 @@ function step2() {
   check.onsuccess = function() {
     if (check.result.url) {
       pushUrl = check.result.url;
+      stat('check-perm');
       promise.resolve();
     } else {
       var request = notification.requestRemotePermission();
       request.onsuccess = function() {
+        stat('request-perm');
         pushUrl = request.result.url;
         promise.resolve();
       };
       request.onerror = function() {
+        stat('request-error');
         alert('error requesting remote permission');
       };
     }
   };
   check.onerror = function() {
+    stat('check-error');
     alert('error checking remote permission');
-  }
+  };
   promise.done(function() {
-   console.log('Your push URL:', pushUrl);
-   $('#step-2 li').toggleClass('selected');
+    stat('push-url');
+    console.log('Your push URL:', pushUrl);
+    $('#step-2 li').toggleClass('selected');
   });
   return promise;
 }
@@ -212,6 +225,7 @@ function step3() {
   var promise = $.Deferred(),
       cookies = bakeCookies();
   if (cookies.username && cookies.access_token) {
+    stat('oauthd');
     token = localStorage.token = cookies.access_token;
     username = localStorage.username = cookies.username;
 
@@ -244,7 +258,7 @@ function step4() {
 function render() {
   var hooks = getHooks(),
       allRepos = repos.concat(orgRepos);
-  for (idx in allRepos) {
+  for (var idx in allRepos) {
     allRepos[idx].hasHook = (allRepos[idx].id in hooks);
   }
   $('#repos').html(Mustache.render($('#repos-template').text(),
@@ -263,11 +277,32 @@ $(document).bind('step', function(e, step) {
   $('.selected').each(function(idx, el) {
     if (el.classList)
       el.classList.remove('selected');
-  })
+  });
   $('#omgsvg,#nav,#steps').children(child).each(function(idx, el) {
     if (el.classList)
       el.classList.add('selected');
   });
+  stat('step-' + step);
 });
 
+function navTiming() {
+  if (performance.timing) {
+    setTimeout(function() {
+      var t = performance.timing,
+          start = t.navigationStart;
+      $.post('/nav-timing', {
+        dns: t.domainLookupEnd - start,
+        connect: t.connectEnd - start,
+        response: t.responseEnd - start,
+        interactive: t.domInteractive - start,
+        loaded: t.domContentLoadedEventEnd - start,
+        total: t.loadEventEnd - start
+      });
+    }, 3000);
+  } else {
+    stat('no-nav-timing');
+  }
+}
+
 $(document).ready(main);
+$(document).ready(navTiming);

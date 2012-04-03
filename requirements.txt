@@ -10,3 +10,4 @@ gunicorn==0.14.2
 Flask-SQLAlchemy==0.15
 SQLAlchemy==0.7.5
 boto==2.3.0
+redis==2.4.11

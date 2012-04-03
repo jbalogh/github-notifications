@@ -1,9 +1,10 @@
 from datetime import datetime
 import json
 import os
-
+import time
 import urlparse
 
+import redis as redislib
 import requests
 
 from flask import Flask, request, redirect, abort, session, jsonify
@@ -20,6 +21,11 @@ OAUTH_SECRET = os.environ.get('OAUTH_SECRET', '')
 STATIC_URL = os.environ.get('STATIC_URL', 'static')
 
 app.secret_key = os.environ.get('SECRET_KEY', 'secret key')
+
+redis_url = urlparse.urlparse(os.environ.get('REDISTOGO_URL',
+                                             'redis://localhost:6379'))
+redis = redislib.Redis(host=redis_url.hostname, port=redis_url.port,
+                       password=redis_url.password)
 
 
 class Model(object):
@@ -54,27 +60,75 @@ class Subscription(Model, db.Model):
         return self.repo
 
 
+def stat(name, bucket='stats'):
+    start = time.time()
+    now = datetime.now()
+    pipe = redis.pipeline()
+    pipe.hincrby(bucket, name, 1)
+    pipe.incr(name + now.strftime(':%Y-%m-%d:%H:%M'))
+    pipe.incr(name + now.strftime(':%Y-%m-%d:%H'))
+    pipe.incr(name + now.strftime(':%Y-%m-%d'))
+    pipe.execute()
+    print 'redis: %.2f' % (time.time() - start)
+
+
+STATS = {
+    'http-redirect': 'Redirect HTTP to HTTPS',
+    'homepage': '/',
+    'queue': '/queue',
+    'new-queue': 'New Queue',
+    'update-queue': 'Update Queue',
+    'oauth': '/oauth',
+    'new-user': 'New User',
+    'hook': '/hook',
+    'notify': 'Send Notification',
+    'subscribe': '/subscribe',
+    'add-subscription': 'Add subscription',
+    'unsubscribe': 'Unsubscribe',
+    'stat': '/stat',
+    'test-hook': 'Test Hook',
+    'add-hook': 'Add Hook',
+    'hook-fail': 'Adding Hook Failed',
+    'remove-hook': 'Remove Hook',
+    'step-1': 'Get Add-on',
+    'step-2': 'Authorize',
+    'step-3': 'Add Repos',
+    'check-perm': 'Check Permission succeeded',
+    'request-perm': 'Request Permission succeeded',
+    'push-url': 'Have push URL',
+    'oauthd': 'OAuth Success',
+    'nav-timing': 'Navigation Timing',
+    'no-nav-timing': 'No Navigation Timer',
+}
+
+
 @app.route('/', methods=['GET'])
 def root():
     if not app.debug and request.headers['X-Forwarded-Proto'] != 'https':
+        stat('http-redirect')
         response = redirect('https://github-notifications.herokuapp.com', 301)
         response.headers['Strict-Transport-Security'] = 'max-age=15768000'
         return response
+    stat('homepage')
     return open('index.html').read() % {'STATIC': STATIC_URL}
 
 
 @app.route('/queue', methods=['POST'])
 def add_queue():
+    stat('queue')
     queue = request.form['queue']
     username = session['username']
     user = User.query.filter_by(username=username).first_or_404()
     new_user = user.push_url is None
     if user.push_url != queue:
+        if not new_user:
+            stat('update-queue')
         print ('Adding push URL.' if new_user else 'Updating push URL.')
         user.push_url = queue
         db.session.add(user)
         db.session.commit()
     if new_user:
+        stat('new-queue')
         notify(queue, 'Welcome to Github Notifications!',
                'So glad to have you %s.' % user.username)
     return ''
@@ -82,6 +136,7 @@ def add_queue():
 
 @app.route('/oauth', methods=['GET'])
 def oauth():
+    stat('oauth')
     if 'code' in request.args:
         code = request.args['code']
         r = requests.post('https://github.com/login/oauth/access_token',
@@ -93,6 +148,7 @@ def oauth():
         r = requests.get('https://api.github.com/user?access_token=%s' % token)
         username = json.loads(r.text)['login']
         if not User.query.filter_by(username=username).first():
+            stat('new-user')
             print 'New user:', username
             user = User(username=username)
             db.session.add(user)
@@ -101,7 +157,7 @@ def oauth():
         session['username'] = username
         response = redirect('/')
         response.set_cookie('access_token', token)
-        response.set_cookie('username', username);
+        response.set_cookie('username', username)
         return response
 
     return redirect('/')
@@ -109,6 +165,7 @@ def oauth():
 
 @app.route('/hook', methods=['POST'])
 def hook():
+    stat('hook')
     payload = json.loads(request.form['payload'])
     repo = payload['repository']
     if not payload['commits']:
@@ -125,6 +182,7 @@ def hook():
         action = payload['compare']
 
     repo_slug = normalize(repo['url'])
+    stat(repo_slug, bucket='hooks')
     print 'Sending hook for:', repo_slug
     q = User.query.join(User.subscriptions).filter(Subscription.repo == repo_slug)
     for user in q.all():
@@ -139,6 +197,7 @@ def normalize(repo_url):
 
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
+    stat('subscribe')
     repo = request.form['repo']
     username = session['username']
 
@@ -147,6 +206,7 @@ def subscribe():
     if r.status_code == 204:
         repo = normalize(repo)
         if not Subscription.query.filter_by(user=user, repo=repo).first():
+            stat('add-subscription')
             print 'Adding a subscription for:', repo
             sub = Subscription(repo=repo, user=user)
             db.session.add(sub)
@@ -157,6 +217,7 @@ def subscribe():
 
 @app.route('/unsubscribe', methods=['POST'])
 def unsubscribe():
+    stat('unsubscribe')
     repo = normalize(request.form['repo'])
     username = session['username']
 
@@ -167,11 +228,36 @@ def unsubscribe():
     return jsonify(count=Subscription.query.filter_by(repo=repo).count())
 
 
+@app.route('/stat', methods=['POST'])
+def add_stat():
+    stat('add-stat')
+    stat(request.form['name'])
+    return ''
+
+
+@app.route('/nav-timing', methods=['POST'])
+def nav_timing():
+    start = time.time()
+    pipe = redis.pipeline()
+    pipe.hincrby('stats', 'nav-timing', 1)
+    pipe.rpush('dns', request.form['dns'])
+    pipe.rpush('connect', request.form['connect'])
+    pipe.rpush('response', request.form['response'])
+    pipe.rpush('interactive', request.form['interactive'])
+    pipe.rpush('loaded', request.form['loaded'])
+    pipe.rpush('total', request.form['total'])
+    pipe.execute()
+    print 'redis: %.2f' % (time.time() - start)
+    return ''
+
+
 def notify(queue, title, text, action=None):
+    stat('notify')
     msg = {'title': title, 'body': text, 'actionUrl': action}
     msg = dict((k, v) for k, v in msg.items() if v)
     response = requests.post(queue, msg)
     print 'Sent notification:', response
+    stat('notify:%s' % response.status_code)
 
 
 if __name__ == '__main__':
