@@ -1,5 +1,7 @@
 from datetime import datetime
 import json
+import logging
+from logging.handlers import SMTPHandler
 import os
 import time
 import urlparse
@@ -26,6 +28,27 @@ redis_url = urlparse.urlparse(os.environ.get('REDISTOGO_URL',
                                              'redis://localhost:6379'))
 redis = redislib.Redis(host=redis_url.hostname, port=redis_url.port,
                        password=redis_url.password)
+
+
+if os.environ.get('SENDGRID_USERNAME'):
+    mail_handler = SMTPHandler('smtp.sendgrid.net',
+                               'errors@jbalogh.me',
+                               ['errors@jbalogh.me'],
+                               '[Error] Heroku',
+                               credentials=(os.environ['SENDGRID_USERNAME'],
+                                            os.environ['SENDGRID_PASSWORD']))
+    mail_handler.setLevel(logging.ERROR)
+    app.logger.addHandler(mail_handler)
+    mail_handler.setFormatter(logging.Formatter("""\
+Message type:       %(levelname)s
+Location:           %(pathname)s:%(lineno)d
+Module:             %(module)s
+Function:           %(funcName)s
+Time:               %(asctime)s
+
+Message:
+
+%(message)s"""))
 
 
 class Model(object):
