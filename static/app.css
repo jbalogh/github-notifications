@@ -210,3 +210,6 @@ footer ul:last-child {
 footer li {
   margin-bottom: .5em;
 }
+footer li:last-child {
+  margin-top: 1em;
+}
